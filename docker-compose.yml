@@ -1,0 +1,71 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: talentoplus_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
+    networks:
+      - talentoplus_net
+
+  api:
+    image: talentoplus-api
+    container_name: talentoplus_api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - Jwt__Key=${Jwt__Key}
+      - Jwt__Issuer=${Jwt__Issuer}
+      - Jwt__Audience=${Jwt__Audience}
+      - Smtp__Host=${Smtp__Host}
+      - Smtp__Port=${Smtp__Port}
+      - Smtp__User=${Smtp__User}
+      - Smtp__Pass=${Smtp__Pass}
+      - Gemini__ApiKey=${Gemini__ApiKey}
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+    ports:
+      - "5001:8080"
+    depends_on:
+      - db
+    networks:
+      - talentoplus_net
+
+  web:
+    image: talentoplus-web
+    container_name: talentoplus_web
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - Gemini__ApiKey=${Gemini__ApiKey}
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - Smtp__Host=${Smtp__Host}
+      - Smtp__Port=${Smtp__Port}
+      - Smtp__User=${Smtp__User}
+      - Smtp__Pass=${Smtp__Pass}
+      # JWT keys might be needed if shared services access them, safer to include
+      - Jwt__Key=${Jwt__Key}
+      - Jwt__Issuer=${Jwt__Issuer}
+      - Jwt__Audience=${Jwt__Audience}
+    ports:
+      - "5000:8080"
+    depends_on:
+      - db
+    networks:
+      - talentoplus_net
+    dns:
+      - 8.8.8.8
+
+volumes:
+  postgres_data:
+
+
+networks:
+  talentoplus_net:
+    driver: bridge
