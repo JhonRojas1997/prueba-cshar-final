@@ -1,0 +1,99 @@
+@model IEnumerable<TalentoPlus.Domain.Entities.Empleado>
+@{
+    ViewData["Title"] = "Gestión de Empleados";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Empleados</h1>
+    <div class="btn-group">
+        <a asp-action="Create" class="btn btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Nuevo Empleado
+        </a>
+        <a asp-action="Import" class="btn btn-success shadow-sm">
+            <i class="fas fa-file-excel fa-sm text-white-50"></i> Importar Excel
+        </a>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <form asp-action="Index" method="get" class="form-inline">
+            <div class="input-group">
+                <input type="text" name="searchString" class="form-control bg-light border-0 small" placeholder="Buscar por nombre o documento..." value="@ViewBag.SearchString">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search fa-sm"></i> Buscar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Documento</th>
+                        <th>Nombre Completo</th>
+                        <th>Email</th>
+                        <th>Cargo</th>
+                        <th>Departamento</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Documento</td>
+                            <td>@item.Nombres @item.Apellidos</td>
+                            <td>@item.Email</td>
+                            <td>@item.Cargo?.Nombre</td>
+                            <td>@item.Departamento?.Nombre</td>
+                            <td>
+                                @{
+                                    string badgeStyle = "background-color: #6c757d; color: white;"; // Default Grey
+                                    if (item.Estado == TalentoPlus.Domain.Entities.EstadoEmpleado.Activo) 
+                                        badgeStyle = "background-color: #28a745; color: white;"; // Green
+                                    else if (item.Estado == TalentoPlus.Domain.Entities.EstadoEmpleado.Vacaciones) 
+                                        badgeStyle = "background-color: #ffc107; color: #333;"; // Yellow
+                                    else if (item.Estado == TalentoPlus.Domain.Entities.EstadoEmpleado.Inactivo) 
+                                        badgeStyle = "background-color: #dc3545; color: white;"; // Red
+                                }
+                                <span class="badge" style="@badgeStyle font-size: 100%; padding: 0.5em 0.7em;">
+                                    @item.Estado.ToString()
+                                </span>
+                            </td>
+                            <td>
+                                <a asp-action="DownloadCv" asp-route-id="@item.Id" class="btn btn-info btn-sm" title="Descargar CV">
+                                    <i class="fas fa-file-pdf"></i> CV
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm" title="Editar">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('¿Está seguro de desactivar este empleado?');">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Desactivar">
+                                        <i class="fas fa-ban"></i> Desactivar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-searchString="@ViewBag.SearchString">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    </div>
+</div>

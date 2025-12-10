@@ -1,0 +1,35 @@
+@{
+    ViewData["Title"] = "Importar Empleados";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Importar Empleados desde Excel</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    El archivo debe contener las columnas: Documento, Nombres, Apellidos, Cargo, Departamento, Salario, FechaIngreso, NivelEducativo, Email.
+                </div>
+
+                <form asp-action="Import" enctype="multipart/form-data" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    
+                    <div class="mb-4">
+                        <label for="archivo" class="form-label">Seleccionar Archivo Excel (.xlsx)</label>
+                        <input type="file" name="archivo" class="form-control" accept=".xlsx" required />
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-upload"></i> Subir y Procesar
+                        </button>
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

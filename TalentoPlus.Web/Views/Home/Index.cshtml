@@ -1,0 +1,181 @@
+@model TalentoPlus.Web.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard Admin";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Panel de Control</h1>
+        <a asp-controller="Empleados" asp-action="Import" class="btn btn-sm btn-success shadow-sm">
+            <i class="fas fa-file-excel fa-sm text-white-50"></i> Importar Empleados
+        </a>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+
+        <!-- Total Employees Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Empleados Totales</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalEmpleados</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people-fill fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Employees Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Activos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.EmpleadosActivos</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-person-check-fill fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Departments Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Departamentos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.DepartamentosCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-building fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Chat Section -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">🤖 Asistente IA - Consultas en Lenguaje Natural</h6>
+                    <small class="text-muted">Pregunta sobre tus empleados</small>
+                </div>
+                <div class="card-body">
+                    <div id="ai-chat-history" class="mb-3" style="max-height: 300px; overflow-y: auto; border: 1px solid #e3e6f0; border-radius: 5px; padding: 15px; background-color: #f8f9fc;">
+                        <div id="ai-messages">
+                            <div class="text-muted text-center" id="ai-welcome">
+                                <i class="bi bi-robot"></i> Escribe una pregunta sobre tus empleados. Ejemplos:<br>
+                                <small>- "¿Cuántos desarrolladores tenemos?"<br>
+                                - "¿Cuántos empleados están inactivos?"<br>
+                                - "¿Cuántos empleados hay en el departamento de IT?"</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" id="ai-query-input" class="form-control" placeholder="Escribe tu pregunta aquí..." />
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="button" id="ai-submit-btn">
+                                <i class="bi bi-send-fill"></i> Preguntar
+                            </button>
+                        </div>
+                    </div>
+                    <div id="ai-loading" class="text-center mt-3" style="display:none;">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="sr-only">Cargando...</span>
+                        </div>
+                        <span class="ml-2">Consultando IA...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('ai-query-input');
+        const submitBtn = document.getElementById('ai-submit-btn');
+        const loading = document.getElementById('ai-loading');
+        const messagesContainer = document.getElementById('ai-messages');
+        const welcome = document.getElementById('ai-welcome');
+
+        async function sendQuery() {
+            const query = input.value.trim();
+            if (! query) return;
+
+            // Hide welcome message
+            if (welcome) welcome.style.display = 'none';
+
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'mb-2 text-right';
+            userMsg.innerHTML = `<span class="badge badge-primary p-2" style="color: #000; background-color: #e3f2fd; border: 1px solid #2196F3;">${escapeHtml(query)}</span>`;
+            messagesContainer.appendChild(userMsg);
+
+            // Clear input and show loading
+            input.value = '';
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/AI/Query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+
+                // Add AI response
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'mb-2';
+                aiMsg.innerHTML = `<span class="badge badge-success p-2" style="white-space: pre-wrap; text-align: left; display: inline-block; color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb;">${escapeHtml(data.response)}</span>`;
+                messagesContainer.appendChild(aiMsg);
+
+                // Scroll to bottom
+                document.getElementById('ai-chat-history').scrollTop = document.getElementById('ai-chat-history').scrollHeight;
+            } catch (error) {
+                console.error('AI Query Error:', error);
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'mb-2';
+                errorMsg.innerHTML = `<span class="badge badge-danger p-2" style="color: white;">${escapeHtml(data?.response || error.message || 'Error: No se pudo conectar con la IA.')}</span>`;
+                messagesContainer.appendChild(errorMsg);
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                input.focus();
+            }
+        }
+
+        submitBtn.addEventListener ('click', sendQuery);
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendQuery();
+        });
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    });
+</script>
